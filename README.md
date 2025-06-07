@@ -1,0 +1,13 @@
+# PostgreSQL Installation:
+- Install PostgreSQL:
+    - sudo apt install postgresql postgresql-contrib
+- Switch to superuser:
+    - sudo -i -u postgres
+- Open the PostgreSQL interactive shell:
+    - psql
+- Create a user:
+    - CREATE USER myuser WITH PASSWORD 'mypassword';
+- Create a DB:
+    - CREATE DATABASE mydb OWNER myuser;
+- Connect to DB:
+    - psql -U your_username -d your_database -h localhost -p 5432
