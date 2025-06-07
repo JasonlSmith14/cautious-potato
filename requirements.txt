@@ -4,3 +4,5 @@ sqlmodel
 pgvector
 google-genai
 sentence-transformers
+dbt-postgres
+

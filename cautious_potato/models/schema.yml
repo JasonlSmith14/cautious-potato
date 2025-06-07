@@ -1,0 +1,8 @@
+
+version: 2
+
+models:
+  - name: debits
+    description: "All transactions which are debits"
+  - name: credits
+    description: "All transactions which are credits"
