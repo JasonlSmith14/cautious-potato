@@ -1,1 +1,6 @@
-chromadb
+pytesseract
+tika
+sqlmodel
+pgvector
+google-genai
+sentence-transformers
