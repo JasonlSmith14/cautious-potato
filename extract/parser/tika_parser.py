@@ -1,18 +1,18 @@
 from typing import List
 from tika import parser
 
-from extract.base_parser import BaseParser
+from extract.base.base_parser import BaseParser
 
 
 class TikaParser(BaseParser):
     def __init__(self):
         pass
 
-    def _parse_file(self, filepath: str) -> str:
-        parsed = parser.from_file(filepath)
+    def parse_file(self, file_path: str) -> str:
+        parsed = parser.from_file(file_path)
         return parsed.get("content", "")
 
-    def parse_files(self, file_paths: List[str]) -> str:
+    def parse_files(self, file_paths: List[str]) -> List[str]:
         files = []
         for file_path in file_paths:
             parsed = parser.from_file(file_path)

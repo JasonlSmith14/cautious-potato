@@ -7,5 +7,9 @@ class BaseOCR(ABC):
         super().__init__()
 
     @abstractmethod
-    def scan_documents(self, file_paths: List[str]):
+    def scan_document(self, file_path: str) -> str:
+        pass
+
+    @abstractmethod
+    def scan_documents(self, file_paths: List[str]) -> List[str]:
         pass

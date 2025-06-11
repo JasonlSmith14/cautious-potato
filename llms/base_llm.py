@@ -1,11 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import List
 
 
-class BaseParser(ABC):
+class BaseLLM(ABC):
     def __init__(self):
         super().__init__()
 
     @abstractmethod
-    def parse_files(self, file_paths: List[str]):
+    def generate_response(self, input: str):
         pass
