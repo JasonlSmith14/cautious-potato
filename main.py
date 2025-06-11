@@ -168,16 +168,10 @@ def main():
     transaction_information_inputs: TransactionInformationInputs = (
         transaction_information_inputs["structured_response"]
     )
-    transactions: List[Transaction] = []
-    for (
-        transaction_information_input
-    ) in transaction_information_inputs.transaction_information_inputs:
-        transaction = {
-            **transaction_information_input.parsed_information.model_dump(),
-            **transaction_information_input.category_information.model_dump(),
-            **transaction_information_input.description_information.model_dump(),
-        }
-        transactions.append(Transaction(**transaction))
+    transactions: List[Transaction] = [
+        Transaction.model_validate(t)
+        for t in transaction_information_inputs.transaction_information_inputs
+    ]
 
     # Create the embeddings of the transaction descriptions
     for transaction in transactions:

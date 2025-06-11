@@ -77,15 +77,13 @@ class ParsedInformation(SQLModel):
     )
 
 
-class TransactionInformation(SQLModel):
-    parsed_information: ParsedInformation
-    category_information: CategoryInformation
-    description_information: DescriptionInformation
-
-
-class Transaction(
-    ParsedInformation, CategoryInformation, DescriptionInformation, table=True
+class TransactionInformation(
+    ParsedInformation, CategoryInformation, DescriptionInformation
 ):
+    pass
+
+
+class Transaction(TransactionInformation, table=True):
     __tablename__ = "transactions"
 
     id: Optional[int] = Field(default=None, primary_key=True)
