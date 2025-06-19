@@ -1,2 +1,2 @@
-SELECT id, statement_id, "date", "description", category, amount, balance
+SELECT *
 FROM transactions
