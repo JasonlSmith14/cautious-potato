@@ -3,10 +3,10 @@ from PIL import Image
 from pdf2image import convert_from_path
 import pytesseract
 
-from extract.base.base_ocr import BaseOCR
+from extract.parser import Parser
 
 
-class PytesseractOCR(BaseOCR):
+class PytesseractOCR(Parser):
     def __init__(self):
         pass
 
@@ -16,7 +16,7 @@ class PytesseractOCR(BaseOCR):
     def _image_to_string(self, page: Image):
         return pytesseract.image_to_string(page)
 
-    def scan_document(self, file_path: str):
+    def parse_document(self, file_path: str):
         if file_path.endswith(".pdf"):
             pages = self._convert_from_path(pdf_path=file_path)
         elif file_path.endswith((".jpeg", ".png")):
@@ -28,7 +28,7 @@ class PytesseractOCR(BaseOCR):
 
         return page_texts
 
-    def scan_documents(self, file_paths: List[str]) -> List[str]:
+    def parse_documents(self, file_paths: List[str]) -> List[str]:
         documents_text = []
         for file_path in file_paths:
             pages = self.scan_document(file_path=file_path)

@@ -31,8 +31,8 @@ class Service:
     def _build_postgresql_url(self):
         return f"postgresql://{self.username}:{self.password}@localhost:{self.port}/{self.database_name}"
 
-    def create_tables(self):
-        SQLModel.metadata.create_all(self.engine)
+    def create_tables(self, tables=None):
+        SQLModel.metadata.create_all(self.engine, tables=tables)
 
     def delete_tables(self, tables=None):
         SQLModel.metadata.drop_all(self.engine, tables=tables)

@@ -37,5 +37,5 @@ class Tools:
         return tavily_search_tool
 
     @staticmethod
-    def duck_duck_go_tool():
-        return DuckDuckGoSearchRun()
+    def duck_duck_go_tool(description):
+        return DuckDuckGoSearchRun(description=description)
