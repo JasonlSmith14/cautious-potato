@@ -4,19 +4,14 @@ from models.tables import ParsedStatement
 
 
 class Extract:
-    def __init__(
-        self,
-        parsers: List[Parser],
-    ):
-        self.parsers = parsers
+    def __init__(self, parser: Parser):
+        self.parser = parser
 
-    def extract_from_file(self, file_path: str) -> List[ParsedStatement]:
-        parsed_statements = []
-        for parser in self.parsers:
-            parsed_result = parser.parse_document(file_path=file_path)
-            parsed_statement = ParsedStatement(
-                strategy_name=parser.__class__.__name__, strategy_result=parsed_result
-            )
-            parsed_statements.append(parsed_statement)
+    def extract_from_file(self, file_path: str) -> ParsedStatement:
 
-        return parsed_statements
+        parsed_result = self.parser.parse_document(file_path=file_path)
+        parsed_statement = ParsedStatement(
+            strategy_name=self.parser.__class__.__name__, strategy_result=parsed_result
+        )
+
+        return parsed_statement
