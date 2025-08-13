@@ -7,26 +7,7 @@ from sqlmodel import Field, SQLModel
 from enums.category import CategoryEnum
 
 
-class CategoryInformation(SQLModel):
-    category: CategoryEnum = Field(
-        description="The category the transaction belongs to. This should be thought-out well and not naively chosen."
-    )
-    reasoning: str = Field(
-        description="The reason for choosing the category. Should be well-explained and reasonable."
-    )
-    cleaned_description: str = Field(
-        description="A cleaned and normalised version of the transaction description."
-    )
-
-
-class TrackedCategoryInformation(SQLModel):
-    id: str = Field(
-        description="Used to track parsed information and relate it to category information"
-    )
-    data: CategoryInformation
-
-
-class ParsedInformation(SQLModel):
+class TransactionInformation(SQLModel):
     transaction_date: date = Field(
         description="The exact date on which the transaction occurred."
     )
@@ -48,14 +29,16 @@ class ParsedInformation(SQLModel):
     balance: float = Field(
         description="The account balance immediately after this transaction was applied."
     )
-
-
-class TrackedParsedInformation(SQLModel):
-    id: str = Field(
-        description="Used to track parsed information and relate it to category information"
+    category: CategoryEnum = Field(
+        description="The category the transaction belongs to. This should be thought-out well and not naively chosen."
     )
-    data: ParsedInformation
+    reasoning: str = Field(
+        description="The reason for choosing the category. Should be well-explained and reasonable."
+    )
+    cleaned_description: str = Field(
+        description="A cleaned and normalised version of the transaction description. For example, 'DEBIT CARD PURCHASE FROM 65.00- 04 22 MILKY LANE MO 5196*7245 16 APR' should be 'Milky Lane'"
+    )
 
 
-class TransactionInformation(ParsedInformation, CategoryInformation):
-    pass
+class Transactions(SQLModel):
+    transactions: List[TransactionInformation]

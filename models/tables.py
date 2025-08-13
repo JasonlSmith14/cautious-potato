@@ -1,7 +1,6 @@
 from datetime import date
-from typing import Any, List, Optional
-from sqlmodel import Column, Relationship, SQLModel, Field
-from pgvector.sqlalchemy import Vector
+from typing import List, Optional
+from sqlmodel import Relationship, SQLModel, Field
 
 from models.information import TransactionInformation
 
@@ -34,3 +33,5 @@ class Transaction(TransactionInformation, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     statement_id: Optional[int] = Field(default=None, foreign_key="statements.id")
     statement: Optional["Statement"] = Relationship(back_populates="transactions")
+
+
