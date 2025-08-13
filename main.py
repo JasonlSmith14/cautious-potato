@@ -1,16 +1,18 @@
 import os
 from typing import List
 from dotenv import load_dotenv
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-from models.inputs import CategoryInformationInputs, ParsedInformationInputs
-from models.tables import Statement, ParsedStatement, Transaction
-from service import Service
+from database_service.base_database_service import BaseDatabaseService
+from embeddings.base_embeddings import BaseEmbeddings
+from embeddings.gemini_embeddings import LangchainEmbeddings
+from models.information import Transactions
+from models.tables import ParsedStatement, Statement, Transaction
+from database_service.postgres_database_service import PostgresService
 
 from extract.extract import Extract
-from extract.tika_parser import TikaParser
-from embeddings.embeddings import Embeddings
+from extract.tika import TikaParser
 from agent.agent import Agent
-from agent.agent_chain import AgentChain
 
 load_dotenv()
 
@@ -21,76 +23,72 @@ DATABASE_NAME = os.getenv("DATABASE_NAME")
 API_KEY = os.getenv("GEMINI_KEY")
 
 
-service = Service(
+postgres_service = PostgresService(
     url=None,
     username=USERNAME,
     password=PASSWORD,
     port=PORT,
     database_name=DATABASE_NAME,
 )
-embeddings = Embeddings()
 
-extract = Extract(parsers=[TikaParser()])
+gemini_embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
+
+langchain_embeddings = LangchainEmbeddings(embedding_model=gemini_embeddings)
+
+parser = TikaParser()
+
+extract = Extract(parser=parser)
 
 
-parsing_agent = Agent[ParsedInformationInputs](
-    name="parsing_agent",
+transaction_agent = Agent(
+    name="transaction_agent",
     model_name="gemini-2.0-flash",
     model_provider="google_genai",
     prompt=(
         "You are responsible for extracting transactions from a banking statement. "
-        "Each transaction may include a date, original description, amount, and balance. "
-        "You will be provided with both structured and OCR-based extractions of the same statement."
-    ),
-    tools=[],
-    response_format=ParsedInformationInputs,
-)
-
-
-categorising_agent = Agent[CategoryInformationInputs](
-    name="categorising_agent",
-    model_name="gemini-2.0-flash",
-    model_provider="google_genai",
-    prompt=(
-        "You are responsible for categorising banking transactions using their description and amount. "
+        "You are also responsible for categorising banking transactions using their description and amount. "
         "Additionally, return a cleaned and readable version of the original transaction description. "
-        "Tool-usage is highly encouraged. "
-        "Ensure your queries are well-formed and include relevant context, such as the transaction location, to improve search accuracy."
     ),
     tools=[],
-    response_format=CategoryInformationInputs,
-)
-
-agent_chain = AgentChain(
-    parsing_agent=parsing_agent,
-    categorising_agent=categorising_agent,
+    response_format=Transactions,
 )
 
 
-def main():
-    # service.delete_tables()
-    service.create_tables(
-        tables=[
-            Statement.__table__,
-            Transaction.__table__,
-            ParsedStatement.__table__,
-        ]
-    )
+def main(
+    database_service: BaseDatabaseService,
+    transaction_agent: Agent,
+    embeddings_model: BaseEmbeddings,
+    extract: Extract,
+):
+    # database_service.delete_tables(
+    #     tables=[
+    #         Statement.__table__,
+    #         Transaction.__table__,
+    #         ParsedStatement.__table__,
+    #     ]
+    # )
+    # database_service.create_tables(
+    #     tables=[
+    #         Statement.__table__,
+    #         Transaction.__table__,
+    #         ParsedStatement.__table__,
+    #     ]
+    # )
 
     # This is to extract the data from the banking statement
-    parsed_statements = extract.extract_from_file(file_path="data/test.pdf")
+    parsed_statement = extract.extract_from_file(file_path="data/13-08-25.pdf")
 
-    transaction_information = agent_chain.process_transactions(
-        parsed_statements=parsed_statements
+    transaction_information: Transactions = transaction_agent.invoke_agent(
+        content=parsed_statement.strategy_result
     )
 
     transactions: List[Transaction] = [
-        Transaction.model_validate(t) for t in transaction_information
+        Transaction.model_validate(t) for t in transaction_information.transactions
     ]
 
     # Create the embeddings of the transaction descriptions
     for transaction in transactions:
-        transaction.description_embedding = embeddings.create_embedding(
+        transaction.description_embedding = embeddings_model.create_embedding(
             transaction.description
         )
 
@@ -102,12 +100,17 @@ def main():
         transactions=transactions,
         start_date=min(dates),
         end_date=max(dates),
-        parsed_statements=parsed_statements,
+        parsed_statement=[parsed_statement],
     )
 
     # Add to table
-    service.create_single(model=statement)
+    database_service.create_single(model=statement)
 
 
 if __name__ == "__main__":
-    main()
+    main(
+        database_service=postgres_service,
+        transaction_agent=transaction_agent,
+        embeddings_model=langchain_embeddings,
+        extract=extract,
+    )
