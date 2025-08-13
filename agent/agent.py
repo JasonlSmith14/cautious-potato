@@ -1,4 +1,4 @@
-from typing import List, Optional, Type, TypeVar, Generic
+from typing import List, Optional
 
 from langchain_core.messages import HumanMessage
 from langchain.chat_models import init_chat_model
@@ -6,17 +6,16 @@ from langchain_core.tools import BaseTool
 from langgraph.prebuilt import create_react_agent
 from sqlmodel import SQLModel
 
-T = TypeVar("T", bound=SQLModel)
 
 
-class Agent(Generic[T]):
+class Agent:
     def __init__(
         self,
         name: str,
         model_name: str,
         model_provider: str,
         prompt: str,
-        response_format: Type[T],
+        response_format: SQLModel,
         tools: Optional[List[BaseTool]] = None,
     ):
         self.name = name
@@ -25,7 +24,9 @@ class Agent(Generic[T]):
         self.prompt = prompt
         self.response_format = response_format
 
-    def create_agent(self):
+        self.agent = self._create_agent()
+
+    def _create_agent(self):
         return create_react_agent(
             self.model,
             tools=self.tools,
@@ -34,7 +35,7 @@ class Agent(Generic[T]):
             name=self.name,
         )
 
-    def invoke_agent(self, content: str) -> T:
+    def invoke_agent(self, content: str):
         input = {"messages": [HumanMessage(content=content)]}
-        response = self.create_agent().invoke(input, config={"recursion_limit": 100})
+        response = self.agent.invoke(input, config={"recursion_limit": 100})
         return response["structured_response"]
