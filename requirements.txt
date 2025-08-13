@@ -3,7 +3,6 @@ tika
 sqlmodel
 pgvector
 google-genai
-sentence-transformers
 dbt-postgres
 langchain
 langchain-google-genai
