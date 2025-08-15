@@ -114,7 +114,7 @@ def main(
         transactions=transactions,
         start_date=min(dates),
         end_date=max(dates),
-        parsed_statement=[parsed_statement],
+        parsed_statements=parsed_statements,
     )
 
     database_service.create_single(model=statement)
