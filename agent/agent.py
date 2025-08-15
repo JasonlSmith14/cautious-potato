@@ -7,7 +7,6 @@ from langgraph.prebuilt import create_react_agent
 from sqlmodel import SQLModel
 
 
-
 class Agent:
     def __init__(
         self,
@@ -35,7 +34,7 @@ class Agent:
             name=self.name,
         )
 
-    def invoke_agent(self, content: str):
+    def invoke_agent(self, content: str):        
         input = {"messages": [HumanMessage(content=content)]}
         response = self.agent.invoke(input, config={"recursion_limit": 100})
         return response["structured_response"]

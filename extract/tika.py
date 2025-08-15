@@ -15,8 +15,8 @@ class TikaParser(Parser):
     def parse_documents(self, file_paths: List[str]) -> List[str]:
         files = []
         for file_path in file_paths:
-            parsed = parser.from_file(file_path)
-            files.append(parsed.get("content", ""))
+            parsed = self.parse_document(file_path=file_path)
+            files.append(parsed)
 
         return files
 
@@ -24,6 +24,6 @@ class TikaParser(Parser):
 if __name__ == "__main__":
     tika_parser = TikaParser()
 
-    files = tika_parser.parse_files(["data/test.pdf"])
+    files = tika_parser.parse_documents(["data/test.pdf"])
 
     print(files)

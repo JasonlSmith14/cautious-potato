@@ -7,10 +7,11 @@ from sqlmodel import Field, SQLModel
 from enums.category import CategoryEnum
 
 
-class TransactionInformation(SQLModel):
+class TransactionInformation(SQLModel, table=False):
     transaction_date: date = Field(
-        description="The exact date on which the transaction occurred."
+        description="The exact date of the transaction, in ISO format YYYY-MM-DD."
     )
+
     description: str = Field(
         description="The raw, original description of the transaction as extracted from the bank statement."
     )
@@ -24,7 +25,7 @@ class TransactionInformation(SQLModel):
         ),
     )
     amount: float = Field(
-        description="The monetary value of the transaction, in South African Rand (ZAR)."
+        description="The monetary value of the transaction, in South African Rand (ZAR). Should be positive for money coming into the account, and negative for money leaving the account."
     )
     balance: float = Field(
         description="The account balance immediately after this transaction was applied."
@@ -40,5 +41,5 @@ class TransactionInformation(SQLModel):
     )
 
 
-class Transactions(SQLModel):
+class Transactions(SQLModel, table=False):
     transactions: List[TransactionInformation]
