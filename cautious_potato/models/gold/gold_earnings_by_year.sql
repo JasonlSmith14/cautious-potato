@@ -1,6 +1,7 @@
 SELECT
-  EXTRACT(YEAR FROM transaction_date)  AS year,
-  SUM(debit) AS total_amount
-FROM {{ ref('gold_debits') }}
+  EXTRACT(YEAR FROM transaction_date) AS year,
+  SUM(credit) AS total_amount
+FROM {{ ref('gold_credits') }}
 GROUP BY year
+ORDER BY year
 
