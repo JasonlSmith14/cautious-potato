@@ -2,7 +2,7 @@ from datetime import date
 from typing import List, Optional
 from sqlmodel import Relationship, SQLModel, Field
 
-from models.information import TransactionInformation
+from models.information import CategoryInformation, TransactionInformation
 
 
 class ParsedStatement(SQLModel, table=True):
@@ -32,6 +32,14 @@ class Transaction(TransactionInformation, table=True):
     __tablename__ = "transactions"
     id: Optional[int] = Field(default=None, primary_key=True)
     statement_id: Optional[int] = Field(default=None, foreign_key="statements.id")
+    category_id: Optional[int] = Field(default=None, foreign_key="categories.id")
+
     statement: Optional["Statement"] = Relationship(back_populates="transactions")
+    category: Optional["Category"] = Relationship(back_populates="transactions")
 
 
+class Category(CategoryInformation, table=True):
+    __tablename__ = "categories"
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+    transactions: List["Transaction"] = Relationship(back_populates="category")

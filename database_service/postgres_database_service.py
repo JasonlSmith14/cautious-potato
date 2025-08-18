@@ -1,7 +1,6 @@
 from enum import Enum
 from typing import List, Optional, Type, TypeVar
 
-
 import pandas as pd
 from sqlmodel import SQLModel, Session, create_engine, select
 from sqlalchemy.orm.attributes import InstrumentedAttribute
