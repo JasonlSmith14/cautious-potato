@@ -14,6 +14,14 @@ class TransactionInformation(SQLModel, table=False):
     description: str = Field(
         description="The raw, original description of the transaction as extracted from the bank statement."
     )
+    description_embedding: Optional[List[float]] = Field(
+        default=None,
+        sa_column=Column(Vector(None)),
+        description=(
+            "A vector embedding representation of the description, used for semantic similarity searches. "
+            "This facilitates matching transactions with similar descriptions for categorisation purposes."
+        ),
+    )
     amount: float = Field(
         description="The monetary value of the transaction, in South African Rand (ZAR). Should be positive for money coming into the account, and negative for money leaving the account."
     )
@@ -31,14 +39,6 @@ class CategoryInformation(SQLModel, table=False):
     )
     cleaned_description: str = Field(
         description="A cleaned and normalised version of the transaction description. For example, 'DEBIT CARD PURCHASE FROM 65.00- 04 22 MILKY LANE MO 5196*7245 16 APR' should be 'Milky Lane'"
-    )
-    description_embedding: Optional[List[float]] = Field(
-        default=None,
-        sa_column=Column(Vector(None)),
-        description=(
-            "A vector embedding representation of the cleaned description, used for semantic similarity searches. "
-            "This facilitates matching transactions with similar descriptions for categorisation purposes."
-        ),
     )
 
 
