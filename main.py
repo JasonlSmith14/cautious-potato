@@ -1,7 +1,8 @@
 import os
 from dotenv import load_dotenv
 
-from models.information import Transactions
+from embeddings.embeddings import Embeddings
+from models.information import CategoryInformation, Transactions
 from database_service.postgres_database_service import PostgresService
 from extract.extract import Extract
 from extract.tika import TikaParser
@@ -51,16 +52,37 @@ parsing_agent = Agent(
     response_format=Transactions,
 )
 
+categorising_agent = Agent(
+    name="categorising_agent",
+    model_name="gemini-2.0-flash",
+    model_provider="google_genai",
+    prompt=(
+        """You are responsible for categorising banking transactions.
+
+    For a transaction you must:
+    1. Determine the correct category given all the information about the transaction.
+    2. Provide a reasoning for that category.
+    3. Provide a cleaned description of the original description."""
+    ),
+    tools=[],
+    response_format=CategoryInformation,
+)
+
+embedding_model = Embeddings()
+
 service = Service(
     database_service=postgres_service,
     extract=extract,
     parsing_agent=parsing_agent,
-    categorising_agent=None,
+    categorising_agent=categorising_agent,
+    embedding_model=embedding_model,
 )
+
 
 def main(file_path: str, service: Service):
     service.ingest_transactions(file_path=file_path)
+    service.categorise_transactions()
 
 
 if __name__ == "__main__":
-    main(file_path="data/2025-08-08.pdf", service=service)
+    main(file_path="data/13-08-25.pdf", service=service)
