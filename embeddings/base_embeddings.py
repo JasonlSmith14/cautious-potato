@@ -9,3 +9,7 @@ class BaseEmbeddings(ABC):
     @abstractmethod
     def create_embedding(self, text: str) -> List[float]:
         pass
+
+    @abstractmethod
+    def create_embeddings(self, texts: List[str]) -> List[List[float]]:
+        pass
