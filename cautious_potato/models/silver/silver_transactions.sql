@@ -1,9 +1,3 @@
--- Duplicate transactions can be expected under the same statement_id
--- An example: Fees for payments made when receiving your salary
--- But, we should not allow duplicate transactions across different statement_ids
--- This would then mean we processed the same transaction more than once which could be possible in over-lapping windows in bank staments
--- An example, 3-months vs 6-months
-
 WITH annotated AS (
 SELECT 
     *,
@@ -18,6 +12,7 @@ SELECT DISTINCT ON (transaction_date, description, amount, row_number)
     transaction_date,
     amount, 
     cleaned_description,
+    description_embedding,
     category,
     balance
 FROM annotated
