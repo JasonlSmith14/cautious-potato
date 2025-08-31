@@ -82,4 +82,4 @@ def main(file_path: str, service: Service):
 
 
 if __name__ == "__main__":
-    main(file_path="data/13-08-25.pdf", service=service)
+    main(file_path="data/2025-08-08.pdf", service=service)
