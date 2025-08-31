@@ -1,12 +1,12 @@
 WITH annotated AS (
 SELECT 
     *,
-    ROW_NUMBER() OVER(PARTITION BY statement_id, transaction_date, description, amount)
+    ROW_NUMBER() OVER(PARTITION BY statement_id, transaction_date, amount)
 FROM 
     {{ ref('bronze_transactions') }}
 )
 
-SELECT DISTINCT ON (transaction_date, description, amount, row_number)
+SELECT DISTINCT ON (transaction_date, amount, row_number)
     id,
     statement_id, 
     transaction_date,
@@ -16,4 +16,4 @@ SELECT DISTINCT ON (transaction_date, description, amount, row_number)
     category,
     balance
 FROM annotated
-ORDER BY transaction_date, description, row_number, amount, id ASC
+ORDER BY transaction_date, row_number, amount, id ASC
