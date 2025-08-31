@@ -17,9 +17,6 @@ PASSWORD = os.getenv("DATABASE_PASSWORD")
 PORT = os.getenv("PORT")
 DATABASE_NAME = os.getenv("DATABASE_NAME")
 
-API_KEY = os.getenv("GEMINI_KEY")
-
-
 postgres_service = PostgresService(
     url=None,
     username=USERNAME,
