@@ -1,12 +1,11 @@
+import json
 import time
 from typing import List
-import uuid
 from agent.agent import Agent
 from database_service.base_database_service import BaseDatabaseService
 from embeddings.base_embeddings import BaseEmbeddings
-from enums.category import CategoryEnum
 from extract.extract import Extract
-from models.information import Categories, CategoryInformation, Transactions
+from models.information import CategoryInformation, Transactions
 from models.tables import Category, ParsedStatement, Statement, Transaction
 
 
@@ -35,10 +34,8 @@ class Service:
             ]
         )
 
-    def extract_transactions(self, file_path: str):
-        return self.extract.extract_from_file(file_path=file_path)
-
-    def parse_transactions(self, parsed_statements: List[ParsedStatement]):
+    def ingest_transactions(self, file_path: str):
+        parsed_statements = self.extract.extract_from_file(file_path=file_path)
 
         transactions: List[Transaction] = []
         for parsed_statement in parsed_statements:
@@ -68,12 +65,6 @@ class Service:
                 text=transaction.description
             )
 
-        return transactions
-
-    def create_statement(
-        self, transactions: List[Transaction], parsed_statements: List[ParsedStatement]
-    ):
-
         if not transactions:
             return
 
@@ -88,27 +79,13 @@ class Service:
 
         self.database_service.create_single(model=statement)
 
-    def ingest_transactions(self, file_path: str):
-        parsed_statements = self.extract_transactions(file_path=file_path)
-        transactions = self.parse_transactions(parsed_statements=parsed_statements)
-        self.create_statement(
-            transactions=transactions, parsed_statements=parsed_statements
-        )
-
     def categorise_transactions(self):
-        """
-        1. Go through each transaction to find similar categorised transactions to determine the category
-        2. Then find all simililar uncategorised transactions, determine the category for one then pass that through to each transaction
-        3. Finally, determine the categories for all the remaining transactions all at once, or in batches
-        """
-
-        # Step 1
+        transaction_groups: List[List[Transaction]] = []
         uncategorised_transactions: List[Transaction] = (
             self.database_service.read_nulls(
                 model=Transaction, column=Transaction.category_id
             )
         )
-
         for transaction in uncategorised_transactions:
             similar_transactions: List[Transaction] = (
                 self.database_service.search_by_embedding(
@@ -119,64 +96,51 @@ class Service:
                 )
             )
 
-            if similar_transactions:
-                category_id = similar_transactions[0].category_id
-                if category_id:
+            similar_uncategorised_transactions = [
+                t for t in similar_transactions if t.category_id == None
+            ]
 
-                    transaction.category_id = category_id
-                    self.database_service.update_single(
-                        model=Transaction,
-                        model_id=transaction.id,
-                        update_data=transaction.model_dump(include={"category_id"}),
-                    )
+            transaction_groups.append(similar_uncategorised_transactions)
 
-                    continue
-
-        # Step 2
-        attempted_all_transactions = False
-        while not attempted_all_transactions:
-            uncategorised_transactions: List[Transaction] = (
-                self.database_service.read_nulls(
-                    model=Transaction, column=Transaction.category_id
+        for transaction_group in transaction_groups:
+            first_transaction = transaction_group[0]
+            similar_transactions: List[Transaction] = (
+                self.database_service.search_by_embedding(
+                    embedding=first_transaction.description_embedding,
+                    embedding_column=Transaction.description_embedding,
+                    model=Transaction,
+                    exclude_id=first_transaction.id,
                 )
             )
-            for transaction in uncategorised_transactions:
-                similar_transactions: List[Transaction] = (
-                    self.database_service.search_by_embedding(
-                        embedding=transaction.description_embedding,
-                        embedding_column=Transaction.description_embedding,
-                        limit=10000,
-                        model=Transaction,
-                        exclude_id=transaction.id,
+
+            similar_transactions_with_categories = [
+                t for t in similar_transactions if t.category_id != None
+            ]
+
+            if similar_transactions_with_categories:
+                category = similar_transactions_with_categories[0].category
+
+            else:
+                average_amount = sum([t.amount for t in transaction_group]) / len(
+                    transaction_group
+                )
+                descriptions = [t.description for t in transaction_group]
+                category_information: CategoryInformation = (
+                    self.categorising_agent.invoke_agent(
+                        content=json.dumps(
+                            {
+                                "average_amount": average_amount,
+                                "descriptions": descriptions,
+                            }
+                        )
                     )
                 )
 
-                # Group all similar uncategorised transactions
-                similar_transactions = [
-                    similar_transaction
-                    for similar_transaction in similar_transactions
-                    if similar_transaction.category_id == None
-                ]
+                category = Category.model_validate(category_information)
 
-                if similar_transactions:
-                    # Determine the category for the first transaction
-                    category: CategoryInformation = (
-                        self.categorising_agent.invoke_agent(
-                            content=similar_transactions[0].model_dump_json(
-                                include={"description", "amount"}
-                            )
-                        )
-                    )
+            category.transactions = transaction_group
+            self.database_service.create_single(model=category)
 
-                    category = Category.model_validate(category)
-                    category.transactions = similar_transactions
-                    self.database_service.create_single(model=category)
-
-                    break
-
-                attempted_all_transactions = True
-
-        # Step 3
         uncategorised_transactions: List[Transaction] = (
             self.database_service.read_nulls(
                 model=Transaction, column=Transaction.category_id
@@ -194,4 +158,4 @@ class Service:
 
             self.database_service.create_single(model=category)
 
-            time.sleep(30)
+            time.sleep(5)
