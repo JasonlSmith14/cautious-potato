@@ -25,9 +25,9 @@ class PostgresService(BaseDatabaseService):
         self.database_name = database_name
 
         if not url:
-            url = self._build_postgresql_url()
+            self.url = self._build_postgresql_url()
 
-        self.engine = create_engine(url)
+        self.engine = create_engine(self.url)
 
     def _build_postgresql_url(self):
         return f"postgresql://{self.username}:{self.password}@localhost:{self.port}/{self.database_name}"
