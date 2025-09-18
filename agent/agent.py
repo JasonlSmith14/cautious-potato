@@ -14,7 +14,7 @@ class Agent:
         model_name: str,
         model_provider: str,
         prompt: str,
-        response_format: SQLModel,
+        response_format: SQLModel = None,
         tools: Optional[List[BaseTool]] = None,
     ):
         self.name = name
@@ -34,7 +34,7 @@ class Agent:
             name=self.name,
         )
 
-    def invoke_agent(self, content: str):        
+    def invoke_agent(self, content: str):
         input = {"messages": [HumanMessage(content=content)]}
         response = self.agent.invoke(input, config={"recursion_limit": 100})
         return response["structured_response"]
