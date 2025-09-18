@@ -6,4 +6,5 @@ google-genai
 dbt-postgres
 langchain
 langchain-google-genai
+streamlit
 
