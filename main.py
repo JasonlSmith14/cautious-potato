@@ -1,5 +1,10 @@
+import streamlit as st
 import os
 from dotenv import load_dotenv
+from langchain_community.agent_toolkits.sql.toolkit import SQLDatabaseToolkit
+from langchain_community.utilities.sql_database import SQLDatabase
+from langchain_google_genai import ChatGoogleGenerativeAI
+from sqlalchemy import inspect
 
 from embeddings.embeddings import Embeddings
 from models.information import CategoryInformation, Transactions
@@ -9,8 +14,8 @@ from extract.tika import TikaParser
 from agent.agent import Agent
 from service.service import Service
 
-load_dotenv()
 
+load_dotenv()
 
 USERNAME = os.getenv("DATABASE_USERNAME")
 PASSWORD = os.getenv("DATABASE_PASSWORD")
@@ -24,6 +29,24 @@ postgres_service = PostgresService(
     port=PORT,
     database_name=DATABASE_NAME,
 )
+
+engine = postgres_service.engine
+
+inspector = inspect(engine)
+all_tables = inspector.get_table_names()
+
+allowed_tables = [t for t in all_tables if t.startswith("gold_")]
+
+db = SQLDatabase.from_uri(
+    postgres_service.url,
+    include_tables=allowed_tables,
+)
+
+llm = ChatGoogleGenerativeAI(
+    model="gemini-2.5-flash",
+)
+
+toolkit = SQLDatabaseToolkit(db=db, llm=llm)
 
 parser = TikaParser()
 extract = Extract(parser=parser)
@@ -65,6 +88,14 @@ categorising_agent = Agent(
     response_format=CategoryInformation,
 )
 
+questions_agent = Agent(
+    "questions_agent",
+    model_name="gemini-2.5-flash",
+    model_provider="google_genai",
+    prompt="Get the information related to the question",
+    tools=toolkit.get_tools(),
+)
+
 embedding_model = Embeddings()
 
 service = Service(
@@ -76,10 +107,21 @@ service = Service(
 )
 
 
-def main(file_path: str, service: Service):
-    service.ingest_transactions(file_path=file_path)
-    service.categorise_transactions()
+def main(service: Service):
+
+    banking_statements = st.file_uploader(
+        label="Upload your banking statements", accept_multiple_files=True, type="pdf"
+    )
+
+    if banking_statements:
+        for banking_statement in banking_statements:
+            file_path = f"data/{banking_statement.name}"
+            with open(file_path, "wb") as file:
+                file.write(banking_statement.getvalue())
+
+            service.ingest_transactions(file_path=file_path)
+            service.categorise_transactions()
 
 
 if __name__ == "__main__":
-    main(file_path="data/2025-08-08.pdf", service=service)
+    main(service=service)
